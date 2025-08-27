@@ -1,4 +1,22 @@
 import mongoose = require("mongoose");
+import { MONGO_URL } from "./config";
+
+const connectDB = async () => {
+
+    if (!MONGO_URL) {
+        console.error("FATAL ERROR: MONGO_URL is not defined in environment variables.");
+        process.exit(1);
+    }
+
+    try{
+        await mongoose.connect(MONGO_URL);
+    }catch(e){
+        console.log("Error connecting to DB");
+    }
+
+};
+
+connectDB();
 
 const userSchema = new mongoose.Schema({
     username: { type: String, required: true, unique:true },
@@ -24,14 +42,7 @@ const linkSchema = new mongoose.Schema({
     userId: { type: mongoose.Schema.Types.ObjectId, ref: 'user', required: true },
 });
 
-const UserModel = mongoose.model('users', userSchema);
-const ContentModel = mongoose.model('content', contentSchema);
-const TagModel = mongoose.model('tags', tagSchema);
-const LinkModel = mongoose.model('link', linkSchema);
-
-module.exports = {
-    UserModel: UserModel,
-    ContentModel: ContentModel,
-    TagModel: TagModel,
-    LinkModel: LinkModel,
-};
+export const UserModel = mongoose.model('users', userSchema);
+export const ContentModel = mongoose.model('content', contentSchema);
+export const TagModel = mongoose.model('tags', tagSchema);
+export const LinkModel = mongoose.model('link', linkSchema);
