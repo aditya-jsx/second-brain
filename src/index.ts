@@ -3,11 +3,13 @@ import mongoose = require("mongoose");
 import jwt = require("jsonwebtoken");
 import z = require("zod");
 import bcrypt = require("bcrypt");
-import { UserModel } from "./db";
+import { ContentModel, UserModel } from "./db";
+import { Auth } from "./middleware";
 import { JWT_USER_PASSWORD } from "./config";
 import { MONGO_URL } from "./config";
 
 const app = express();
+app.use(express.json());
 
 
 app.post("/api/v1/signup", async (req, res)=>{
@@ -91,12 +93,19 @@ app.post("/api/v1/signin", async (req, res)=>{
             }
             
             const token = jwt.sign({
-                userId: user._id 
+                id: user._id.toString() 
             }, JWT_USER_PASSWORD);
+
+            res.cookie('token', token, {
+                httpOnly: true,
+                secure: process.env.NODE_ENV === 'production', // use secure in production for https
+                maxAge: 1000 * 60 * 60,
+                sameSite: 'lax', // protects against CSRF
+            })
 
             return res.status(200).json({
                 msg: "Sign in successful",
-                token: token 
+                // token: token 
             });
         }else{
             return res.status(403).json({
@@ -123,8 +132,43 @@ app.post("/api/v1/signin", async (req, res)=>{
 
 });
 
-app.post("/api/v1/content", async (req, res)=>{
+app.post("/api/v1/content", Auth, async (req, res)=>{
+    const contentBody = z.object({
+        link: z.string().url(),
+        type: z.enum(['image', 'video', 'article', 'audio']),
+        title: z.string().min(1),
+        tags: z.array(z.string()).optional()
+    })
 
+    const parsedData = contentBody.safeParse(req.body);
+
+    if(!parsedData.success){
+        return res.status(400).json({
+            msg: "Invalid input format",
+            error: parsedData.error.flatten()
+        });
+    }
+
+    const { link, type, title } = parsedData.data;
+
+    try{
+        const newContent = await ContentModel.create({
+            link: link,
+            type: type,
+            title: title,
+            tags: [],
+            userId: req.userId  // this we got from the auth middleware
+        })
+
+        return res.json(200).json({
+            msg: "Content created successfully"
+        })
+    }catch(e){
+        console.error("Error creating content: ", e);
+        res.json({
+            msg: "An internal server error occured"
+        });
+    }
 });
 
 app.get("/api/v1/content", async (req, res)=>{
