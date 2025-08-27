@@ -5,12 +5,12 @@ import z = require("zod");
 import bcrypt = require("bcrypt");
 import { UserModel } from "./db";
 import { JWT_USER_PASSWORD } from "./config";
+import { MONGO_URL } from "./config";
 
 const app = express();
 
 
 app.post("/api/v1/signup", async (req, res)=>{
-    // This route is already well-written. No changes needed here.
     const requiredBody = z.object({
         email: z.string().email(),
         password: z
@@ -142,3 +142,19 @@ app.post("api/v1/brain/share", async (req, res)=>{
 app.get("api/v1/brain/:shareLink", async (req, res)=>{
 
 });
+
+const main = async () => {
+    if (!MONGO_URL) {
+        console.error("FATAL ERROR: MONGO_URL is not defined in environment variables.");
+        process.exit(1);
+    }
+
+    try{
+        await mongoose.connect(MONGO_URL);
+        app.listen(3000);
+    }catch(e){
+        console.log("Error connecting to DB");
+    }
+};
+
+main();
