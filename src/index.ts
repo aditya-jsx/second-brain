@@ -3,7 +3,7 @@ import mongoose = require("mongoose");
 import jwt = require("jsonwebtoken");
 import z = require("zod");
 import bcrypt = require("bcrypt");
-import { ContentModel, UserModel } from "./db";
+import { ContentModel, TagModel, UserModel } from "./db";
 import { Auth } from "./middleware";
 import { JWT_USER_PASSWORD } from "./config";
 import { MONGO_URL } from "./config";
@@ -13,6 +13,7 @@ app.use(express.json());
 
 
 app.post("/api/v1/signup", async (req, res)=>{
+
     const requiredBody = z.object({
         email: z.string().email(),
         password: z
@@ -34,6 +35,7 @@ app.post("/api/v1/signup", async (req, res)=>{
     const { email, password } = parsedData.data;
 
     try{
+
         const hashedPassword = await bcrypt.hash(password, 10);
 
         const existingUser = await UserModel.findOne({ email: email })
@@ -53,17 +55,21 @@ app.post("/api/v1/signup", async (req, res)=>{
         })
 
     }catch(e){
+
         console.error("Database error occured during signup", e);
         if (e instanceof Error) {
         return res.status(500).json({
             msg: "An unexpected error occurred during signup",
             error: e.message 
         })
+
         }else{
+
         return res.status(500).json({
             msg: "An unexpected and unknown error occurred",
             error: String(e)
         });
+
         }
     }
 });
@@ -77,14 +83,17 @@ app.post("/api/v1/signin", async (req, res)=>{
         const user = await UserModel.findOne({email: email});
     
         if(!user){
+
             return res.status(403).json({
                 msg: "Invalid email or password"
             })
+
         }
     
         const passwordMatch = await bcrypt.compare(password, user.password);
 
         if(passwordMatch){
+
             if (!JWT_USER_PASSWORD) {
                 console.error("JWT secret is not configured.");
                 return res.status(500).json({
@@ -105,23 +114,30 @@ app.post("/api/v1/signin", async (req, res)=>{
 
             return res.status(200).json({
                 msg: "Sign in successful",
-                // token: token 
+                token: token 
             });
+
         }else{
+
             return res.status(403).json({
                 msg: "Invalid email or password"
             })
+
         }
 
     }catch(e){
 
         console.error("Error during signin:", e);
+
         if (e instanceof Error) {
+            
             return res.status(500).json({
                 msg: "An unexpected error occurred during signin",
                 error: e.message
             });
+
         } else {
+
             return res.status(500).json({
                 msg: "An unexpected and unknown error occurred",
                 error: String(e)
@@ -133,11 +149,12 @@ app.post("/api/v1/signin", async (req, res)=>{
 });
 
 app.post("/api/v1/content", Auth, async (req, res)=>{
+
     const contentBody = z.object({
         link: z.string().url(),
         type: z.enum(['image', 'video', 'article', 'audio']),
         title: z.string().min(1),
-        tags: z.array(z.string()).optional()
+        tags: z.array(z.string()).optional().default([]),
     })
 
     const parsedData = contentBody.safeParse(req.body);
@@ -149,30 +166,71 @@ app.post("/api/v1/content", Auth, async (req, res)=>{
         });
     }
 
-    const { link, type, title } = parsedData.data;
+    const { link, type, tags, title } = parsedData.data;
 
     try{
+
+        const tagIds = await Promise.all(
+            tags.map(async(tagTitle)=>{
+                const formattedTitle = tagTitle.trim().toLowerCase();
+
+                let tag = await TagModel.findOne({ title: formattedTitle });
+
+                if(!tag){
+                    tag = await TagModel.create({ title: formattedTitle })
+                }
+
+                return tag._id;
+            })
+        )
+
         const newContent = await ContentModel.create({
             link: link,
             type: type,
             title: title,
-            tags: [],
+            tags: tagIds,
             userId: req.userId  // this we got from the auth middleware
         })
 
-        return res.json(200).json({
-            msg: "Content created successfully"
+        return res.status(201).json({
+            msg: "Content created successfully",
+            content: newContent,
+
         })
+
     }catch(e){
+
         console.error("Error creating content: ", e);
-        res.json({
-            msg: "An internal server error occured"
+        return res.status(500).json({
+            msg: "An internal server error occured",
         });
+
     }
 });
 
-app.get("/api/v1/content", async (req, res)=>{
+app.get("/api/v1/content", Auth, async (req, res)=>{
 
+    const userId = req.userId;
+
+    try{
+
+        const content = await ContentModel.find({
+            userId: userId
+        })
+        .populate("userId", "email")
+        .populate("tags", "title")
+
+        return res.status(200).json({
+            content
+        })
+
+    }catch(e){
+
+        return res.status(403).json({
+            msg: "Failed to get the contents"
+        })
+
+    }
 });
 
 app.delete("/api/v1/content", async (req, res)=>{
