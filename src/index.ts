@@ -102,7 +102,7 @@ app.post("/api/v1/signin", async (req, res)=>{
             }
             
             const token = jwt.sign({
-                id: user._id.toString() 
+                userId: user._id.toString() 
             }, JWT_USER_PASSWORD);
 
             res.cookie('token', token, {
@@ -233,25 +233,37 @@ app.get("/api/v1/content", Auth, async (req, res)=>{
     }
 });
 
-app.delete("/api/v1/content", async (req, res)=>{
+app.delete("/api/v1/content/:contentId", Auth,  async (req, res)=>{
+
+    const { contentId } = req.params
     const userId = req.userId;
+
+    // if(!mongoose.Types.ObjectId.isValid(contentId)){
+    //     return res.status(400).json({ mdg: "Invalid content ID format" })
+    // }
 
     try{
         
-        const deleteContent = await ContentModel.deleteOne({userId: userId});
+        const deleteContent = await ContentModel.deleteOne({ 
+            _id: contentId,
+            userId: userId
+         });
 
-        if(deleteContent){
-            return res.status(201).json({
-                msg: "Note Successfully Deleted",
+        if(deleteContent.deletedCount === 0){
+            return res.status(404).json({
+                msg: "Content not found or you do not have permission to delete this note",
             });
-        }else{
-            throw new Error("There was an error while deleting the note");
         }
+
+        return res.status(200).json({
+            msg: "Content deleted Successfully"
+        })
 
     }catch(e){
 
-        return res.status(404).json({
-            msg: "Internal server error"
+        console.error("Error during content deletion: ", e)
+        return res.status(500).json({
+            msg: "An internal server error occurred"
         });
 
     }
