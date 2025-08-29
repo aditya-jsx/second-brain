@@ -234,7 +234,27 @@ app.get("/api/v1/content", Auth, async (req, res)=>{
 });
 
 app.delete("/api/v1/content", async (req, res)=>{
+    const userId = req.userId;
 
+    try{
+        
+        const deleteContent = await ContentModel.deleteOne({userId: userId});
+
+        if(deleteContent){
+            return res.status(201).json({
+                msg: "Note Successfully Deleted",
+            });
+        }else{
+            throw new Error("There was an error while deleting the note");
+        }
+
+    }catch(e){
+
+        return res.status(404).json({
+            msg: "Internal server error"
+        });
+
+    }
 });
 
 app.post("api/v1/brain/share", async (req, res)=>{
