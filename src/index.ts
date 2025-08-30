@@ -238,9 +238,13 @@ app.delete("/api/v1/content/:contentId", Auth,  async (req, res)=>{
     const { contentId } = req.params
     const userId = req.userId;
 
-    // if(!mongoose.Types.ObjectId.isValid(contentId)){
-    //     return res.status(400).json({ mdg: "Invalid content ID format" })
-    // }
+    if (!contentId) {
+        return res.status(400).json({ msg: "Content ID is required" });
+    }
+
+    if (!mongoose.Types.ObjectId.isValid(contentId)) {
+        return res.status(400).json({ msg: "Invalid content ID format" });
+    }
 
     try{
         
