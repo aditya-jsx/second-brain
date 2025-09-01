@@ -5,6 +5,7 @@ dotenv.config();
 
 export const JWT_USER_PASSWORD = process.env.JWT_USER_PASSWORD;
 export const MONGO_URL = process.env.MONGO_URL;
+export const BASE_URL = process.env.BASE_URL;
 
 if (!JWT_USER_PASSWORD) {
     console.error("FATAL ERROR: JWT_USER_PASSWORD is not defined in environment variables.");

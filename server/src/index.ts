@@ -3,9 +3,9 @@ import mongoose = require("mongoose");
 import jwt = require("jsonwebtoken");
 import z = require("zod");
 import bcrypt = require("bcrypt");
-import { ContentModel, TagModel, UserModel } from "./db";
+import { ContentModel, LinkModel, TagModel, UserModel } from "./db";
 import { Auth } from "./middleware";
-import { JWT_USER_PASSWORD } from "./config";
+import { BASE_URL, JWT_USER_PASSWORD } from "./config";
 import { MONGO_URL } from "./config";
 const crypto = require('crypto');
 
@@ -274,18 +274,74 @@ app.delete("/api/v1/content/:contentId", Auth,  async (req, res)=>{
     }
 });
 
-app.post("api/v1/brain/share", Auth, async (req, res)=>{
-    // const userId = req.userId;
+app.post("/api/v1/brain/share", Auth, async (req, res)=>{
+    const userId = req.userId;
 
-    const hash = crypto.createHash('sha256')
+    try{
+        const existinLink = await LinkModel.findOne({ userId: userId })
 
-    res.json({
-        hash
-    })
+        if(!existinLink){
+
+            const hash = crypto.randomBytes(20).toString('hex');
+
+            const newShareableLink = `${req.protocol}://${req.get('host')}/api/v1/brain/${hash}`
+
+            const newHash = await LinkModel.create({
+                userId: userId,
+                hash: hash
+            })
+
+            return res.status(201).json({
+                link: newShareableLink
+            })
+        }
+
+        const shareableLink = `${req.protocol}://${req.get('host')}/api/v1/brain/${existinLink.hash}`
+
+        return res.status(200).json({
+            msg: "Existing shareable link retrieved",
+            link: shareableLink
+        })
+
+    }catch(e){
+        console.error("Error generating shareable link:", e);
+        return res.status(500).json({
+            msg: "Error generating a link"
+        })
+    }
 });
 
-app.get("api/v1/brain/:shareLink", async (req, res)=>{
+app.get("/api/v1/brain/:shareLink", async (req, res)=>{
 
+    const { shareLink } = req.params;
+
+    try{
+
+        let linkDocument = await LinkModel.findOne({ hash: shareLink });
+
+        if(!linkDocument){
+            return res.status(404).json({
+                msg: "Share link not found or invalid"
+            });
+        }
+
+        const userId = linkDocument.userId;
+
+        let contents = await ContentModel.find({ userId: userId })
+         .populate('tags', 'title');
+
+        return res.status(200).json({
+            content : contents
+        });
+
+    }catch(e){
+
+        console.error("Error fetching shared contents", e);
+        return res.status(500).json({
+            msg: "An internal server error occured"
+        });
+
+    }
 });
 
 const main = async () => {
