@@ -13,7 +13,7 @@ interface CardProps {
 export const Card = ({title, heading, startIcon, endIcon, type, link}: CardProps) => {
   return (
     <>
-        <div className="bg-gray-200 h-full max-w-76 p-4 rounded-lg flex flex-col justify-between hover:scale-105 transition duration-300 cursor-pointer gap-6">
+        <div className="bg-gray-200 h-full max-w-76 p-4 rounded-lg flex flex-col justify-between hover:scale-101 transition duration-300 cursor-pointer gap-6">
             {/* upper part */}
             <div className="flex justify-between">
 
