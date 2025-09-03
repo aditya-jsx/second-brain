@@ -8,9 +8,11 @@ import { Auth } from "./middleware";
 import { BASE_URL, JWT_USER_PASSWORD } from "./config";
 import { MONGO_URL } from "./config";
 const crypto = require('crypto');
+import cors from "cors";
 
 const app = express();
 app.use(express.json());
+app.use(cors());
 
 
 app.post("/api/v1/signup", async (req, res)=>{
