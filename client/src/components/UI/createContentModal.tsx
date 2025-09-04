@@ -29,6 +29,9 @@ export const CreateContentModal = ({open, onClose}:{open:boolean, onClose:() => 
                 "Authorization": `Bearer ${localStorage.getItem("token")}`
             }
         });
+
+        onClose();
+        
     }
 
     return(
