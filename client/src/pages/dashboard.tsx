@@ -5,10 +5,12 @@ import { CreateContentModal } from '../components/UI/createContentModal.tsx'
 import { PlusIcon } from "../components/icons/plus.tsx"
 import { ShareIcon } from "../components/icons/shareIcon.tsx"
 import { Sidebar } from '../components/UI/sideBar.tsx'
+import { useContent } from '../hooks/useContent.tsx'
 
 export function Dashboard() {
 
   const [modalOpen, setModalOpen] = useState(false);
+  const contents = useContent();
 
   return (
     <>
@@ -39,7 +41,9 @@ export function Dashboard() {
             
             {/* cards */}
             <div className='flex gap-8 m-2 ml-6'>
-              <Card startIcon={<PlusIcon size='sm' />} endIcon={<ShareIcon size='sm' />} title='Project Ideas' heading='Future Projects' link={"https://x.com/aditya_devs/status/1961850383598571707"} type='X' />
+              {contents.map(({type, link, title}) =>
+                <Card startIcon={<PlusIcon size='sm' />} endIcon={<ShareIcon size='sm' />} title={title} heading='Future Projects' link={link} type={type} />
+              )}
 
               <Card startIcon={<PlusIcon size='sm' />} endIcon={<ShareIcon size='sm' />} title='Project Ideas' heading='Future Projects' link={"https://www.youtube.com/watch/PJ3ZQk_lr9E?si=FDfXn9Mwmip2Ptwy"} type='youtube' />
             </div>
