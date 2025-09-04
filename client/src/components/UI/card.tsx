@@ -6,7 +6,7 @@ interface CardProps {
     heading: string;
     startIcon: React.ReactNode;
     endIcon: React.ReactNode;
-    type: "X" | "youtube";
+    type: "twitter" | "youtube";
     link: string;
 }
 
@@ -40,14 +40,14 @@ export const Card = ({title, heading, startIcon, endIcon, type, link}: CardProps
                 {/* Either Text or link(x or yt) */}
                 <div className="">
                     {
-                        type === "X" && 
+                        type === "twitter" && 
                             <blockquote className="twitter-tweet" data-theme="dark">
                                 <a href={link.replace("x.com", "twitter.com")}></a>
                             </blockquote> 
                     }
                     {
                         type === "youtube" && 
-                            <iframe className="w-full rounded-xl" src={link.replace("watch", "embed")} title="YouTube video player" frameBorder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerPolicy="strict-origin-when-cross-origin" allowFullScreen></iframe>
+                            <iframe className="w-full rounded-xl" src={link.replace("watch", "embed").replace("?v=","/")} title="YouTube video player" frameBorder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerPolicy="strict-origin-when-cross-origin" allowFullScreen></iframe>
                     }
                 </div>
 

@@ -155,7 +155,7 @@ app.post("/api/v1/content", Auth, async (req, res)=>{
 
     const contentBody = z.object({
         link: z.string().url(),
-        type: z.enum(['image', 'video', 'article', 'audio']),
+        type: z.enum(['image', 'video', 'article', 'audio', 'youtube', 'twitter']),
         title: z.string().min(1),
         tags: z.array(z.string()).optional().default([]),
     })

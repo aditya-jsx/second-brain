@@ -6,15 +6,18 @@ export function useContent(){
     const [contents, setContents] = useState([]);
 
     useEffect(()=>{
-        axios.get(`${BASE_URL}/api/v1/content`, {
-            headers: {
-                "Authorization": localStorage.getItem("token")
-            }
-        })
-            .then((response=>{
-                setContents(response.data.contents)
-            }))
-    })
+        const token = localStorage.getItem("token");
+        if(token){
+            axios.get(`${BASE_URL}/api/v1/content`, {
+                headers: {
+                    "Authorization": `Bearer ${token}`
+                }
+            })
+                .then((response=>{
+                    setContents(response.data.content || [])
+                }))
+        }
+    }, [])
     
     return contents;
 }
